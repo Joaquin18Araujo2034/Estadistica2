@@ -1,0 +1,318 @@
+# Practica Calificada 1
+
+Esta práctica debe demostrar que pueden recolectar, pre procesar y preparar datos para su posterior analisis estadistico.
+
+La PC1 debe entregarse como un tutorial, es decir, como si Ud le estuviera enseñando a alguien lo que se tiene que hacer.
+
+Los puntos se obtienen si se completa cada pregunta, y si se explica bien cada paso y codigo utilizado. La falta de explicación se penaliza con 50% del puntaje de cada pregunta. Esta practica vale 10 puntos.
+
+En cada caso mostramos los resultados deseados. Logre el **mismo** resultado.
+
+Esta practica se puede hacer de dos. Esta permitido el uso de materiales de clase y el uso de Google para consultas. No está permitido comunicarse con otros alumnos ni compartir resultados.
+
+Al final, cada uno de los dos debe subir el archivo **html** (que se produce al _knitear_ el RStudio Notebook)   al folder PC1 de su horario (habra una para grupo de _Jaramillo_ y otro para el de _Gonzales_), que está dentro del folder **PCS**.
+
+
+## Pregunta 1 (5 puntos):
+
+Vaya a estos dos links y cree una tabla que integre ambos.
+
+* [https://en.wikipedia.org/wiki/World_Happiness_Report](https://en.wikipedia.org/wiki/World_Happiness_Report)
+
+* [https://en.wikipedia.org/wiki/Democracy_Index](https://en.wikipedia.org/wiki/Democracy_Index)
+
+
+
+El resultado debe ser este:
+
+<iframe width="800" height="600" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTnkrWn6LbVFyke0hQPRaCwxdi1ESkHV-6yFP5lsrrIqiVjh0RxrowR7B_ck9DL2_QFLUxkobwV9-uv/pubhtml?gid=745636458&amp;single=true&amp;widget=true&amp;headers=false"></iframe>
+
+```{r, echo=FALSE, eval=FALSE}
+happyL="https://en.wikipedia.org/wiki/World_Happiness_Report"
+happyPath='//*[@id="mw-content-text"]/div/table/tbody'
+demoL="https://en.wikipedia.org/wiki/Democracy_Index"
+demoPath='//*[@id="mw-content-text"]/div/table[2]/tbody'
+```
+
+```{r, echo=FALSE, eval=FALSE}
+library(htmltab)
+
+happy= htmltab(doc =happyL,
+               which =happyPath,
+               encoding = "UTF-8")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+names(happy)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+names(happy)=gsub(" ","",names(happy))
+```
+
+```{r, echo=FALSE, eval=FALSE}
+demo= htmltab(doc =demoL,
+               which =demoPath,
+               encoding = "UTF-8")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+names(demo)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+library(stringr)
+
+names(demo)=str_split(names(demo)," >>",simplify = T)[,1]
+```
+
+```{r, echo=FALSE, eval=FALSE}
+names(demo)[is.na(names(demo))]="Continent"
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+names(demo)=gsub(" ","",names(demo))
+```
+
+```{r, echo=FALSE, eval=FALSE}
+names(demo)[names(demo)=="Score"]="ScoreDemo"
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+names(happy)[names(happy)=="Score"]="ScoreHappy"
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+happy$Overallrank=NULL
+demo$Rank=NULL
+```
+
+```{r, echo=FALSE, eval=FALSE}
+str(demo)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+str(happy)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+demo$Country=trimws(demo$Country,whitespace = "[\\h\\v]")
+demo$Regimetype=trimws(demo$Regimetype,whitespace = "[\\h\\v]")
+demo$Continent=trimws(demo$Continent,whitespace = "[\\h\\v]")
+happy$Countryorregion=trimws(happy$Countryorregion,whitespace = "[\\h\\v]")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+
+demo$Continent=as.factor(demo$Continent)
+
+
+```
+
+```{r, echo=FALSE, eval=FALSE}
+library(dplyr)
+
+demo$Regimetype= recode(demo$Regimetype,
+       'Full democracy'='4FullDemocracy',
+       'Flawed democracy'='3FlawedDemocracy',
+       'Hybrid regime'='2Hybrid regime',
+       'Authoritarian'='1Authoritarian')
+
+# poner numero delante, ayuda a crear una ordinal
+demo$Regimetype=as.ordered(demo$Regimetype)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+demohappy=merge(demo,happy,by.x = "Country",by.y = "Countryorregion")
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+str(demohappy)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+demohappy[,-c(1,8,9)]=lapply(demohappy[,-c(1,8,9)],as.numeric)
+```
+```{r, echo=FALSE, eval=FALSE}
+demohappy=demohappy[complete.cases(demohappy),]
+```
+
+```{r, echo=FALSE, eval=FALSE}
+#write.csv(demohappy,"p1.csv", row.names = F)
+library(rio)
+export(demohappy, "p1.xlsx")
+```
+
+
+## Parte 2 (3 puntos):
+
+Al resultado anterior, añadale la tabla de este sitio web:
+
+* [https://www.cia.gov/library/publications/resources/the-world-factbook/fields/349.html](https://www.cia.gov/library/publications/resources/the-world-factbook/fields/349.html)
+
+
+El resultado debe ser este:
+
+<iframe width="800" height="600" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTnkrWn6LbVFyke0hQPRaCwxdi1ESkHV-6yFP5lsrrIqiVjh0RxrowR7B_ck9DL2_QFLUxkobwV9-uv/pubhtml?gid=1632683766&amp;single=true&amp;widget=true&amp;headers=false"></iframe>
+
+
+```{r, echo=FALSE, eval=FALSE}
+url2 = "https://www.cia.gov/library/publications/resources/the-world-factbook/fields/349.html"
+
+urban = htmltab(doc = url2, 
+                which ='//*[@id="fieldListing"]',
+                encoding = "UTF-8")
+```
+```{r, echo=FALSE, eval=FALSE}
+names(urban)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+PATRON="(\\-*\\d+\\.*\\d*)(?=\\%)"
+COLSUCIA=urban$Urbanization
+
+# UNA COLUMNA
+urban$pop_urb=str_extract_all(string = COLSUCIA,pattern=PATRON,simplify = T)[,1]
+
+# OTRA COLUMNA
+urban$rate_urb=str_extract_all(string = COLSUCIA,pattern=PATRON,simplify = T)[,2]
+
+urban$Urbanization=NULL
+```
+
+```{r, echo=FALSE, eval=FALSE}
+str(urban)
+```
+```{r, echo=FALSE, eval=FALSE}
+urban[,c(2,3)]=lapply(urban[,c(2,3)],as.numeric)
+```
+```{r, echo=FALSE, eval=FALSE}
+urban$Country=trimws(urban$Country,whitespace = "[\\h\\v]")
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+demohappyurban=merge(demohappy,urban)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+export(demohappyurban,"demohappyurban.xlsx")
+```
+
+
+## Parte 3 (2 puntos):
+
+Al resultado anterior, añadale la tabla de este sitio web:
+
+* [https://www.cia.gov/library/publications/resources/the-world-factbook/fields/274.html](https://www.cia.gov/library/publications/resources/the-world-factbook/fields/274.html)
+
+
+El resultado debe ser este:
+
+<iframe width="800" height="600" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTnkrWn6LbVFyke0hQPRaCwxdi1ESkHV-6yFP5lsrrIqiVjh0RxrowR7B_ck9DL2_QFLUxkobwV9-uv/pubhtml?gid=2078364001&amp;single=true&amp;widget=true&amp;headers=false"></iframe>
+
+```{r, echo=FALSE, eval=FALSE}
+url3 = "https://www.cia.gov/library/publications/resources/the-world-factbook/fields/274.html"
+cdio= htmltab(doc = url3,
+               which ='//*[@id="fieldListing"]',
+               encoding = "UTF-8")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+names(cdio)
+```
+```{r, echo=FALSE, eval=FALSE}
+#Cambiamos nombre de las variables: 
+names(cdio)[2] = "co2"
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+cdio$co2=str_split(cdio$co2,
+                   pattern = '\\(',
+                   simplify = T)[,1]
+```
+
+```{r, echo=FALSE, eval=FALSE}
+library(readr)
+cdio$co2_number=parse_number(cdio$co2)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+cdio$co2_unit=str_split(cdio$co2,pattern = ' ',
+                   simplify = T)[,2]
+
+```
+
+```{r, echo=FALSE, eval=FALSE}
+table(cdio$co2_unit,useNA ='always')
+```
+
+```{r, echo=FALSE, eval=FALSE}
+#recodificando
+library(dplyr)
+cdio$co2_unit=recode(cdio$co2_unit,'billion'=10^9,'million'=10^6,'Mt'=1)
+
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+# nuevo valor
+cdio$co2_InMillions=(cdio$co2_number*cdio$co2_unit)/(10^6)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+str(cdio)
+```
+```{r, echo=FALSE, eval=FALSE}
+cdio$Country=trimws(cdio$Country,whitespace = "[\\h\\v]")
+cdio=cdio[,c(1,5)]
+```
+
+```{r, echo=FALSE, eval=FALSE}
+demohappyurbancdio=merge(demohappyurban,cdio)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+demohappyurbancdio[!complete.cases(demohappyurbancdio),]
+```
+
+```{r, echo=FALSE, eval=FALSE}
+summary(demohappyurbancdio)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+str(demohappyurbancdio,width=70,strict.width='cut')
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+export(demohappyurbancdio,"demohappyurbancdio.xlsx")
+```
+```{r, echo=FALSE, eval=FALSE}
+save(demohappyurbancdio,file="demohappyurbancdio.RData")
+
+saveRDS(demohappyurbancdio, file = "finaldemohappyurbanco2.rds")
+```
+
+Al final, cuando se aplique la funcion **str()** a su dataframe final, se debe obtener: 
+
+![](pc1imagenstr.png){width=800}
+
+
+Y si aplico **summary()** al data frame final, se debe ver:
+
+![](pc1imagensummary.png){width=800}
+
+
+
